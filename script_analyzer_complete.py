@@ -1016,13 +1016,24 @@ def main():
         if current_q["context"]:
             st.info(f"💡 Context: {current_q['context']}")
         
-        # Display suggestions
-        st.write("**Suggested answers:**")
-        for suggestion in current_q["suggestions"]:
-            st.write(f"• {suggestion}")
+        # Display suggestions as clickable buttons
+        st.write("**Click an answer below or type your own:**")
         
-        # Answer input
-        answer = st.text_input("Your answer:", key=f"answer_{analyzer.current_question_id}")
+        # Create columns for suggestion buttons
+        cols = st.columns(2)
+        
+        for i, suggestion in enumerate(current_q["suggestions"]):
+            col_idx = i % 2
+            with cols[col_idx]:
+                if st.button(suggestion, key=f"suggestion_{analyzer.current_question_id}_{i}", use_container_width=True):
+                    if analyzer.submit_answer(suggestion):
+                        st.success("✅ Answer accepted!")
+                        st.rerun()
+                    else:
+                        st.error("❌ Answer not recognized. Please try again.")
+        
+        # Answer input as fallback
+        answer = st.text_input("Or type your answer:", key=f"answer_{analyzer.current_question_id}")
         
         col1, col2 = st.columns(2)
         
