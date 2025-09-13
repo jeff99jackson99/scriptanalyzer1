@@ -49,7 +49,7 @@ class CompleteScriptAnalyzer:
                 "next_questions": {
                     "Because Jesus died for my sins": "1b",  # Ask about deserving heaven/hell
                     "Yes": "1b",  # Ask about deserving heaven/hell
-                    "No": "17",  # Skip to Q17
+                    "No": "2",  # Go to God belief question first, then building analogy
                     "Because I'm a good person": "2",
                     "Because I ask for forgiveness": "2"
                 },
