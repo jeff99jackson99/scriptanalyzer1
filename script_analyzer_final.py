@@ -1,4 +1,4 @@
-"""Correct Interactive PDF Script Questionnaire Application."""
+"""Final Interactive PDF Script Questionnaire Application."""
 
 import re
 import streamlit as st
@@ -12,7 +12,7 @@ class ScriptAnalyzer:
     def __init__(self, pdf_path: str):
         self.pdf_path = pdf_path
         self.questions: Dict[str, Dict[str, Any]] = {}
-        self.current_question_id: str = "start"
+        self.current_question_id: str = "1"
         self.raw_text = ""
         
     def extract_text_from_pdf(self) -> str:
@@ -38,97 +38,130 @@ class ScriptAnalyzer:
         # Split text into lines and clean them
         lines = [line.strip() for line in text.split('\n') if line.strip()]
         
-        # Create a simple structure based on the actual script
-        self._create_script_structure(lines)
+        # Parse the conversational script format
+        self._parse_conversational_script(lines)
         
         return True
     
-    def _create_script_structure(self, lines: List[str]) -> None:
-        """Create script structure based on the actual content."""
+    def _parse_conversational_script(self, lines: List[str]) -> None:
+        """Parse conversational script format with questions and flow logic."""
+        current_q_id = None
+        current_q_text = ""
+        current_suggestions = []
+        current_flow = {}
         
-        # Start with the opening line
-        self.questions["start"] = {
-            "question": "Hey I have a question for you",
-            "suggestions": ["Sure"],
-            "next_questions": {"Sure": "1"}
-        }
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            
+            # Look for question patterns: number followed by text
+            question_match = re.match(r'^(\d+)[\.\)]\s*(.+)$', line)
+            
+            if question_match:
+                # Save previous question
+                if current_q_id:
+                    self.questions[current_q_id] = {
+                        "question": current_q_text,
+                        "suggestions": current_suggestions,
+                        "next_questions": current_flow
+                    }
+                
+                # Start new question
+                current_q_id = question_match.group(1)
+                current_q_text = question_match.group(2)
+                current_suggestions = []
+                current_flow = {}
+                
+                # Look ahead for answers and flow logic
+                j = i + 1
+                while j < len(lines):
+                    next_line = lines[j]
+                    
+                    # Stop if we hit another question
+                    if re.match(r'^(\d+)[\.\)]\s*(.+)$', next_line):
+                        break
+                    
+                    # Look for simple answers (like "Yes.", "No.", "Not sure.")
+                    simple_answer = re.match(r'^([A-Za-z\s]+)\.$', next_line.strip())
+                    if simple_answer:
+                        answer = simple_answer.group(1).strip()
+                        if answer not in current_suggestions:
+                            current_suggestions.append(answer)
+                    
+                    # Look for flow patterns in the text
+                    self._extract_flow_from_text(next_line, current_flow, current_suggestions)
+                    
+                    j += 1
+                
+                i = j - 1
+            
+            i += 1
         
-        # Find all numbered questions
-        question_numbers = []
-        for line in lines:
-            match = re.match(r'^(\d+)[\.\)]\s*(.+)$', line)
-            if match:
-                question_numbers.append((match.group(1), match.group(2)))
-        
-        # Create questions with basic flow
-        for i, (q_num, q_text) in enumerate(question_numbers):
-            current_q_id = q_num
-            
-            # Determine next question (usually next sequential)
-            next_q_id = str(int(q_num) + 1)
-            
-            # Basic suggestions and flow
-            suggestions = ["Yes", "No", "Not sure"]
-            next_questions = {
-                "Yes": next_q_id,
-                "No": next_q_id,
-                "Not sure": next_q_id
-            }
-            
-            # Special handling for specific questions based on the script flow
-            if q_num == "1":  # "What do you think happens to us after we die?"
-                suggestions = ["Not sure", "Heaven and hell", "Reincarnation", "Nothing"]
-                next_questions = {
-                    "Not sure": "2",
-                    "Heaven and hell": "4",  # Skip to question 4
-                    "Reincarnation": "2",
-                    "Nothing": "2"
-                }
-            elif q_num == "2":  # "Do you believe there's a God?"
-                suggestions = ["Yes", "No"]
-                next_questions = {
-                    "Yes": "3",
-                    "No": "5"  # If they don't believe, go to question 5
-                }
-            elif q_num == "3":  # "Since we know there is a God..."
-                suggestions = ["Yes", "No"]
-                next_questions = {
-                    "Yes": "4",
-                    "No": "7"  # If they say no, go to question 7
-                }
-            elif q_num == "4":  # "Have you ever told a lie?"
-                suggestions = ["Yes", "No"]
-                next_questions = {
-                    "Yes": "5",
-                    "No": "5"  # Continue to next question
-                }
-            elif q_num == "5":  # "Have you ever used bad language?"
-                suggestions = ["Yes", "No"]
-                next_questions = {
-                    "Yes": "6",
-                    "No": "6"
-                }
-            
+        # Save the last question
+        if current_q_id:
             self.questions[current_q_id] = {
-                "question": q_text,
-                "suggestions": suggestions,
-                "next_questions": next_questions
+                "question": current_q_text,
+                "suggestions": current_suggestions,
+                "next_questions": current_flow
             }
+    
+    def _extract_flow_from_text(self, text: str, flow_dict: Dict[str, str], suggestions: List[str]) -> None:
+        """Extract flow patterns from text and add to flow dictionary."""
         
-        # Add a completion question at the end
-        last_q = str(len(question_numbers))
-        self.questions[last_q]["next_questions"] = {
-            "Yes": "complete",
-            "No": "complete",
-            "Not sure": "complete"
-        }
+        # Pattern 1: "If they say X, proceed to QY" or "If they answer X, proceed to QY"
+        pattern1 = r'If they (?:say|answer) ["\']?([^"\',]+)["\']?[,\s]*(?:proceed to|go to|ask them question|SKIP question)\s*Q?(\d+)'
+        matches1 = re.finditer(pattern1, text, re.IGNORECASE)
+        for match in matches1:
+            answer = match.group(1).strip().strip('"\'')
+            next_q = match.group(2).strip()
+            if answer and next_q:
+                flow_dict[answer] = next_q
+                if answer not in suggestions:
+                    suggestions.append(answer)
         
-        # Add completion state
-        self.questions["complete"] = {
-            "question": "Thank you for going through the script with me. That's all the questions I have.",
-            "suggestions": ["Start over"],
-            "next_questions": {"Start over": "start"}
-        }
+        # Pattern 2: "If they say X, go to question Y"
+        pattern2 = r'If they say ([^,]+),\s*(?:go to question|ask them question)\s*(\d+)'
+        matches2 = re.finditer(pattern2, text, re.IGNORECASE)
+        for match in matches2:
+            answer = match.group(1).strip().strip('"\'')
+            next_q = match.group(2).strip()
+            if answer and next_q:
+                flow_dict[answer] = next_q
+                if answer not in suggestions:
+                    suggestions.append(answer)
+        
+        # Pattern 3: "If X, proceed to QY"
+        pattern3 = r'If ([^,]+),\s*proceed to Q?(\d+)'
+        matches3 = re.finditer(pattern3, text, re.IGNORECASE)
+        for match in matches3:
+            answer = match.group(1).strip().strip('"\'')
+            next_q = match.group(2).strip()
+            if answer and next_q:
+                flow_dict[answer] = next_q
+                if answer not in suggestions:
+                    suggestions.append(answer)
+        
+        # Pattern 4: Specific answer patterns like "Heaven" -> Q4, "Hell" -> Q17
+        pattern4 = r'["\']([^"\']+)["\'] proceed to Q?(\d+)'
+        matches4 = re.finditer(pattern4, text, re.IGNORECASE)
+        for match in matches4:
+            answer = match.group(1).strip()
+            next_q = match.group(2).strip()
+            if answer and next_q:
+                flow_dict[answer] = next_q
+                if answer not in suggestions:
+                    suggestions.append(answer)
+        
+        # Pattern 5: "If they answer 'X' proceed to QY. If they say Y, proceed to QZ"
+        pattern5 = r'If they (?:answer|say) ["\']([^"\']+)["\'] proceed to Q?(\d+)'
+        matches5 = re.finditer(pattern5, text, re.IGNORECASE)
+        for match in matches5:
+            answer = match.group(1).strip()
+            next_q = match.group(2).strip()
+            if answer and next_q:
+                flow_dict[answer] = next_q
+                if answer not in suggestions:
+                    suggestions.append(answer)
     
     def get_current_question(self) -> Optional[Dict[str, Any]]:
         """Get the current question details."""
@@ -162,22 +195,21 @@ class ScriptAnalyzer:
                 self.current_question_id = next_id
                 return True
         
-        # If no match found, try to go to next sequential question
-        if self.current_question_id.isdigit():
-            try:
-                next_seq_id = str(int(self.current_question_id) + 1)
-                if next_seq_id in self.questions:
-                    self.current_question_id = next_seq_id
-                    return True
-            except ValueError:
-                pass
+        # If no specific flow, try to go to next sequential question
+        try:
+            next_seq_id = str(int(self.current_question_id) + 1)
+            if next_seq_id in self.questions:
+                self.current_question_id = next_seq_id
+                return True
+        except ValueError:
+            pass
         
         # If no match found, stay on current question
         return False
     
     def reset_to_beginning(self):
-        """Reset to the beginning."""
-        self.current_question_id = "start"
+        """Reset to the first question."""
+        self.current_question_id = "1"
     
     def get_script_summary(self) -> str:
         """Get a summary of the parsed script."""
@@ -243,8 +275,8 @@ def main():
         if st.session_state.script_loaded:
             st.markdown("---")
             st.markdown("### 🎯 Quick Actions")
-            if st.button("🏠 Go to Start"):
-                st.session_state.analyzer.current_question_id = "start"
+            if st.button("🏠 Go to Question 1"):
+                st.session_state.analyzer.current_question_id = "1"
                 st.rerun()
     
     # Main content area
@@ -269,12 +301,7 @@ def main():
         return
     
     # Display current question
-    if current_q['question_id'] == "start":
-        st.header("🎬 Script Start")
-    elif current_q['question_id'] == "complete":
-        st.header("✅ Script Complete")
-    else:
-        st.header(f"❓ Question {current_q['question_id']}")
+    st.header(f"❓ Question {current_q['question_id']}")
     
     # Question text in a nice container
     with st.container():
