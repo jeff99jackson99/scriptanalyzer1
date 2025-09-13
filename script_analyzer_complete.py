@@ -130,7 +130,7 @@ class CompleteScriptAnalyzer:
                 "question": "Have you ever told a lie?",
                 "suggestions": ["Yes", "No"],
                 "next_questions": {
-                    "Yes": "7",
+                    "Yes": "5",  # Go to Q5 (bad language) first
                     "No": "4b"  # If they say no, challenge them
                 },
                 "context": "First sin question - need YES to proceed"
@@ -140,9 +140,9 @@ class CompleteScriptAnalyzer:
                 "question": "You could say that you're telling me a lie right now as everybody alive has lied.",
                 "suggestions": ["Yes", "You're right", "I have lied"],
                 "next_questions": {
-                    "Yes": "7",
-                    "You're right": "7",
-                    "I have lied": "7"
+                    "Yes": "5",  # Go to Q5 (bad language) first
+                    "You're right": "5",
+                    "I have lied": "5"
                 },
                 "context": "Challenges denial of lying"
             },
@@ -151,7 +151,7 @@ class CompleteScriptAnalyzer:
                 "question": "Have you ever used bad language?",
                 "suggestions": ["Yes", "No"],
                 "next_questions": {
-                    "Yes": "7",
+                    "Yes": "6",  # Go to Q6 (anger/disrespect) first
                     "No": "6"  # If no, try next question
                 },
                 "context": "Second sin question - need YES to proceed"
@@ -161,7 +161,7 @@ class CompleteScriptAnalyzer:
                 "question": "Have you ever been angry or disrespected someone?",
                 "suggestions": ["Yes", "No"],
                 "next_questions": {
-                    "Yes": "7",
+                    "Yes": "7",  # Now go to Q7 "We've all done these things"
                     "No": "6b"  # If still no, challenge them
                 },
                 "context": "Third sin question - need YES to proceed"
