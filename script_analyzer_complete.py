@@ -994,10 +994,10 @@ class CompleteScriptAnalyzer:
         self.conversation_history = []
 
 def main():
-    st.set_page_config(page_title="Complete Script Analyzer", layout="wide")
+    st.set_page_config(page_title="Script Analyzer", layout="wide")
     
-    st.title("🎯 Complete Interactive Script Questionnaire")
-    st.markdown("**Based on the full script v4.1**")
+    st.title("📋 Interactive Script Questionnaire")
+    st.markdown("**Correct Interactive PDF Script Questionnaire Application**")
     
     # Initialize the analyzer
     if 'analyzer' not in st.session_state:
