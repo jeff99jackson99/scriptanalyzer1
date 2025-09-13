@@ -89,14 +89,16 @@ class CompleteScriptAnalyzer:
             },
             
             "2c": {
-                "question": "The next questions won't make sense to them if they don't believe in a God or creator so stick with it until they do. If they still refuse to believe, I'm here to share the good news on how they can avoid their hell punishment but wish them well and pass on the social links for them to see in case they change their mind.",
-                "suggestions": ["I understand", "I'll think about it", "I still don't believe"],
+                "question": "I respect your choice, but I want you to know the good news: God offers forgiveness through Jesus Christ so you can avoid eternal punishment and have everlasting life. If you ever want to explore further, here are some links you can check out later: [Insert your social/media links]",
+                "suggestions": ["I understand", "I'll think about it", "I still don't believe", "Thank you", "I'll check those out"],
                 "next_questions": {
-                    "I understand": "5",
-                    "I'll think about it": "5",
+                    "I understand": "3",  # Continue with the conversation
+                    "I'll think about it": "3",  # Continue with the conversation
+                    "Thank you": "2d",  # End conversation
+                    "I'll check those out": "2d",  # End conversation
                     "I still don't believe": "2d"  # End conversation
                 },
-                "context": "Final attempt to get them to believe in a creator"
+                "context": "Shares good news and social links when they remain resistant"
             },
             
             "2d": {
