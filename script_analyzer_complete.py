@@ -996,10 +996,59 @@ class CompleteScriptAnalyzer:
         self.conversation_history = []
 
 def main():
-    st.set_page_config(page_title="Script Analyzer", layout="wide")
+    st.set_page_config(page_title="NeedGod.net Script", layout="wide")
     
-    st.title("📋 Interactive Script Questionnaire")
-    st.markdown("**Correct Interactive PDF Script Questionnaire Application**")
+    # Add custom CSS for NeedGod.net theme
+    st.markdown("""
+    <style>
+    .main-header {
+        background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
+        padding: 1rem;
+        border-radius: 10px;
+        color: white;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .main-header h1 {
+        color: white;
+        margin: 0;
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    .main-header p {
+        color: #e8f4fd;
+        margin: 0.5rem 0 0 0;
+        font-size: 1.1rem;
+    }
+    .question-card {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 10px;
+        border-left: 4px solid #2a5298;
+        margin: 1rem 0;
+    }
+    .suggestion-button {
+        background: #2a5298;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        margin: 0.25rem;
+        font-weight: 500;
+    }
+    .suggestion-button:hover {
+        background: #1e3c72;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Main header
+    st.markdown("""
+    <div class="main-header">
+        <h1>NeedGod.net Script</h1>
+        <p>Interactive Gospel Conversation Script</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Initialize the analyzer
     if 'analyzer' not in st.session_state:
@@ -1012,8 +1061,13 @@ def main():
     current_q = analyzer.get_current_question()
     
     if current_q:
-        st.subheader(f"Question {analyzer.current_question_id}")
-        st.write(current_q["question"])
+        # Display question in styled card
+        st.markdown(f"""
+        <div class="question-card">
+            <h3>Question {analyzer.current_question_id}</h3>
+            <p style="font-size: 1.1rem; line-height: 1.6; margin: 1rem 0;">{current_q["question"]}</p>
+        </div>
+        """, unsafe_allow_html=True)
         
         if current_q["context"]:
             st.info(f"💡 Context: {current_q['context']}")
